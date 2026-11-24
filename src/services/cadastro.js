@@ -1,5 +1,5 @@
 'use strict';
-// Criação de equipamentos — usada pelo formulário web e pelo WhatsApp.
+// Criação de equipamentos — usada pelo formulário web.
 const { transaction } = require('../db');
 const { hoje, formatarCodigo } = require('../util');
 

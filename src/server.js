@@ -45,10 +45,6 @@ app.get('/healthz', async (req, res) => {
   try { await query('SELECT 1'); res.json({ ok: true, banco: true }); } catch { res.status(500).json({ ok: false }); }
 });
 
-// Webhook do WhatsApp: público, autenticado pela assinatura da Meta (precisa do corpo bruto)
-const whatsapp = require('./routes/whatsapp');
-app.use('/webhooks/whatsapp', whatsapp.webhook);
-
 app.use('/static', express.static(path.join(__dirname, '..', 'public'), { maxAge: PROD ? '7d' : 0 }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.json({ limit: '1mb' }));
@@ -95,7 +91,6 @@ app.use('/equipamentos', require('./routes/equipamentos'));
 app.use('/setores', require('./routes/setores'));
 app.use('/relatorios', require('./routes/relatorios'));
 app.use('/usuarios', require('./routes/usuarios'));
-app.use('/whatsapp', whatsapp.admin);
 app.use('/api', require('./routes/api'));
 
 app.use((req, res) => {

@@ -8,7 +8,7 @@
       <tbody>
       <% usuarios.forEach(x => { const eu = x.id === user.id; %>
         <tr class="<%= x.ativo ? '' : 'baixado' %>">
-          <td><strong><%= x.nome %></strong><small class="linha2 mono"><%= x.login %><%= eu ? ' (você)' : '' %></small><% if (x.whatsapp) { %><small class="linha2">WhatsApp +<%= x.whatsapp %></small><% } %></td>
+          <td><strong><%= x.nome %></strong><small class="linha2 mono"><%= x.login %><%= eu ? ' (você)' : '' %></small></td>
           <td><%= x.perfil === 'admin' ? 'Administrador' : 'Operador' %></td>
           <td><span class="etq <%= x.ativo ? 'sit-em_uso' : 'sit-baixado' %>"><%= x.ativo ? 'Ativo' : 'Desativado' %></span><% if (x.trocar_senha && x.ativo) { %><small class="linha2">troca de senha pendente</small><% } %></td>
           <td class="m-ocultar"><%= x.ultimo_acesso ? u.dataHora(x.ultimo_acesso) : 'nunca' %></td>
@@ -20,11 +20,6 @@
                   <input type="hidden" name="_csrf" value="<%= csrf %>">
                   <label>Nova senha provisória<input type="password" name="senha" required minlength="8" autocomplete="new-password"></label>
                   <button class="btn sm">Redefinir senha</button>
-                </form>
-                <form method="post" action="/usuarios/<%= x.id %>/whatsapp">
-                  <input type="hidden" name="_csrf" value="<%= csrf %>">
-                  <label>WhatsApp (cadastro por mensagem)<input name="whatsapp" value="<%= x.whatsapp ? '+' + x.whatsapp : '' %>" placeholder="(11) 98765-4321" inputmode="tel"></label>
-                  <button class="btn sm">Salvar WhatsApp</button>
                 </form>
                 <% if (!eu) { %>
                 <form method="post" action="/usuarios/<%= x.id %>/perfil">
@@ -53,7 +48,6 @@
       <label>Nome *<input name="nome" value="<%= form.nome || '' %>" required maxlength="120"></label>
       <label>Login *<input name="login" value="<%= form.login || '' %>" required pattern="[A-Za-z0-9._\-]{3,40}" autocapitalize="none"></label>
       <label>Perfil<select name="perfil"><option value="operador">Operador</option><option value="admin" <%= form.perfil === 'admin' ? 'selected' : '' %>>Administrador</option></select></label>
-      <label>WhatsApp (opcional)<input name="whatsapp" value="<%= form.whatsapp || '' %>" placeholder="(11) 98765-4321" inputmode="tel"><small>Permite cadastrar equipamentos enviando mensagem para o número da empresa.</small></label>
       <label>Senha provisória *<input type="password" name="senha" required minlength="8" autocomplete="new-password"><small>O usuário deverá trocá-la no primeiro acesso.</small></label>
       <div class="acoes"><button class="btn primario">Criar usuário</button></div>
     </form>

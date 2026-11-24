@@ -9,11 +9,12 @@ const router = express.Router();
 
 router.get('/', (req, res) => res.redirect('/relatorios/geral'));
 
-router.get('/:tipo(geral|setor|transferencias|baixas)', async (req, res, next) => {
+router.get('/:tipo(geral|inventario|setor|categoria|transferencias|baixas)', async (req, res, next) => {
   try {
     const tipo = req.params.tipo;
     const f = inv.lerFiltros(req.query);
-    const r = await rel.montar(tipo, f);
+    const detalhe = req.query.detalhe === 'resumo' ? 'resumo' : 'completo';
+    const r = await rel.montar(tipo, f, { detalhe });
     const formato = req.query.formato;
     const usuario = `${req.user.nome} (${req.user.login})`;
     const nome = `relatorio-${tipo}-${hoje()}`;
@@ -28,7 +29,7 @@ router.get('/:tipo(geral|setor|transferencias|baixas)', async (req, res, next) =
       });
       return await exp.xlsx(r, usuario, res);
     }
-    res.render('relatorios/index', { r, f, tipo, TIPOS: rel.TIPOS, exp, query: req.query });
+    res.render('relatorios/index', { r, f, tipo, detalhe, TIPOS: rel.TIPOS, usa: rel.FILTROS[tipo], exp, query: req.query });
   } catch (err) { next(err); }
 });
 

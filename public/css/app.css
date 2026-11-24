@@ -254,11 +254,15 @@ a.kpi:hover { text-decoration: none; border-color: #c4d1f5; }
   .dados { grid-template-columns: 1fr 1fr; gap: 12px 14px; }
   .foto-cartao img { max-height: 260px; object-fit: contain; }
 }
-.checklist { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
-.checklist li::before { content: "○"; display: inline-block; width: 22px; color: var(--muted); }
-.checklist li.ok::before { content: "✔"; color: var(--ok); font-weight: 700; }
-code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; background: #f2f4f7; padding: 1px 5px; border-radius: 4px; }
-code.bloco { display: block; padding: 10px 12px; word-break: break-all; }
-pre.whats { background: #e7f8e2; border-radius: 10px; padding: 14px; white-space: pre-wrap; font: 14px/1.5 inherit; font-family: inherit; margin: 0; }
-.msg-txt { white-space: pre-wrap; max-height: 7.5em; overflow: hidden; font-size: 13px; min-width: 220px; }
-.nowrap { white-space: nowrap; }
+
+/* Relatórios em seções */
+.secao-rel { margin-bottom: 18px; }
+.secao-titulo { font-size: 1rem; margin: 0; padding: 14px 16px 10px; color: var(--primary); border-bottom: 1px solid var(--line); }
+.tabela.compacta { width: auto; min-width: min(100%, 720px); }
+.tabela tr.total td { font-weight: 700; background: #f3f4f6; border-top: 2px solid var(--text); }
+.tabela.relatorio td .linha2 { color: var(--muted); }
+/* Filtros: grade flexível (o número de campos varia por tela) */
+.filtros { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
+.filtros .busca { grid-column: span 2; }
+.filtros-acoes { flex-wrap: wrap; }
+@media (max-width: 760px) { .filtros { grid-template-columns: 1fr 1fr; } .filtros .busca { grid-column: 1 / -1; } }

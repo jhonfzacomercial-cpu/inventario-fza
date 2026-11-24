@@ -61,7 +61,7 @@
     <li class="tl-<%= m.tipo %>">
       <div class="tl-linha"><span class="etq tipo-<%= m.tipo %>"><%= u.TIPOS_MOV[m.tipo] %></span> <strong><%= u.data(m.data_movimentacao) %></strong></div>
       <div class="tl-detalhe">
-        <% if (m.tipo === 'cadastro') { %>Cadastrado no setor <%= m.destino_codigo %> — <%= m.destino_nome %><%= m.responsavel_novo ? `, responsável ${m.responsavel_novo}` : '' %>.<% if (m.detalhes && m.detalhes.lote) { %> Unidade <%= m.detalhes.lote %> do lote.<% } %><% if (m.detalhes && m.detalhes.origem === 'whatsapp') { %> Cadastro feito pelo WhatsApp.<% } %>
+        <% if (m.tipo === 'cadastro') { %>Cadastrado no setor <%= m.destino_codigo %> — <%= m.destino_nome %><%= m.responsavel_novo ? `, responsável ${m.responsavel_novo}` : '' %>.<% if (m.detalhes && m.detalhes.lote) { %> Unidade <%= m.detalhes.lote %> do lote.<% } %>
         <% } else if (m.tipo === 'transferencia') { %>De <strong><%= m.origem_codigo %> — <%= m.origem_nome %></strong> para <strong><%= m.destino_codigo %> — <%= m.destino_nome %></strong>.
           <% if ((m.responsavel_anterior || '') !== (m.responsavel_novo || '')) { %> Responsável: <%= m.responsavel_anterior || '—' %> → <%= m.responsavel_novo || '—' %>.<% } %>
         <% } else if (m.tipo === 'responsavel') { %>Responsável: <%= m.responsavel_anterior || '—' %> → <%= m.responsavel_novo || '—' %>.

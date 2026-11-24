@@ -88,6 +88,29 @@ async function totaisPorSetor(f, opts = {}) {
   return rows;
 }
 
+// Totais agrupados por setor, categoria, situação ou estado (respeitando os filtros)
+const AGRUPAMENTOS = {
+  setor: { chave: "s.codigo || ' — ' || s.nome", ordem: 's.codigo' },
+  categoria: { chave: 'c.nome', ordem: 'c.nome' },
+  situacao: { chave: 'e.situacao', ordem: 'e.situacao' },
+  estado: { chave: 'e.estado', ordem: 'e.estado' },
+  motivo: { chave: 'e.baixa_motivo', ordem: 'e.baixa_motivo' },
+};
+async function agrupar(f, por, opts = {}) {
+  const g = AGRUPAMENTOS[por];
+  const { where, params } = whereEquipamentos(f, opts);
+  const { rows } = await query(`
+    SELECT ${g.chave} AS chave, count(*)::int AS quantidade,
+           COALESCE(sum(e.valor_aquisicao), 0) AS valor,
+           count(*) FILTER (WHERE e.valor_aquisicao IS NULL)::int AS sem_valor
+      FROM equipamentos e
+      JOIN setores s ON s.id = e.setor_id
+      JOIN categorias c ON c.id = e.categoria_id
+      ${where}
+     GROUP BY ${g.chave}, ${g.ordem} ORDER BY ${g.ordem}`, params);
+  return rows;
+}
+
 // Movimentações (transferências / trocas de responsável) com filtro de período
 async function listarMovimentacoes(f, { tipos = ['transferencia', 'responsavel'], limit } = {}) {
   const cond = ['m.tipo = ANY($1)'], params = [tipos];
@@ -127,4 +150,4 @@ async function opcoes() {
   return { setores: setores.rows, categorias: categorias.rows, responsaveis: responsaveis.rows.map((r) => r.responsavel) };
 }
 
-module.exports = { lerFiltros, listar, totais, totaisPorSetor, listarMovimentacoes, opcoes, SELECT_EQUIP };
+module.exports = { lerFiltros, listar, totais, totaisPorSetor, agrupar, listarMovimentacoes, opcoes, SELECT_EQUIP };

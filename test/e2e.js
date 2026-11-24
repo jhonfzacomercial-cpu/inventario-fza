@@ -175,33 +175,74 @@ const ok = (msg) => console.log('  ✔ ' + msg);
   ok(`Painel: ${kpis[0]} ativos · ${kpis[1]} · ${kpis[2]} sem valor · ${kpis[3]} baixado`);
   await shot('09-painel');
 
+  // Relatório geral (consolidado)
+  const lerXlsx = async (arquivo) => { const wb = new ExcelJS.Workbook(); await wb.xlsx.readFile(arquivo); return wb; };
+  const resumoDe = (ws) => { const r = {}; ws.eachRow((row) => { const a = row.getCell(1).value; if (typeof a === 'string') r[a] = row.getCell(2).value; }); return r; };
+  const baixar = async (texto, nome) => { const [d] = await Promise.all([page.waitForEvent('download'), page.click(`a:has-text("${texto}")`)]); const p2 = path.join(OUT, nome); await d.saveAs(p2); return p2; };
+  const textoPdf = (arq) => require('child_process').execFileSync('pdftotext', ['-layout', arq, '-']).toString();
+
+  await page.goto('/relatorios');
+  assert.ok(page.url().endsWith('/relatorios/geral'));
+  const titulos = await page.$$eval('.secao-titulo', (h) => h.map((x) => x.textContent.trim()));
+  for (const t of ['Itens ativos por setor', 'Itens ativos por categoria', 'Itens ativos por situação', 'Itens ativos por estado de conservação', 'Baixas por motivo', 'Lista de itens ativos (18)', 'Itens baixados (1)']) {
+    assert.ok(titulos.some((x) => x.startsWith(t)), 'seção ausente: ' + t);
+  }
+  const totalSetor = await page.$$eval('.secao-rel:first-of-type tr.total td', (td) => td.map((x) => x.textContent.trim()));
+  assert.strictEqual(totalSetor[1], '18');
+  const kg = await page.$$eval('.kpi strong', (s) => s.map((x) => x.textContent.replace(/\s/g, ' ').trim()));
+  assert.deepStrictEqual(kg.slice(0, 5), ['18', 'R$ 20.739,00', '1', '1', 'R$ 6.890,00']);
+  ok('Relatório geral na tela: 18 ativos · R$ 20.739,00 · 1 baixado (R$ 6.890,00) + seções por setor/categoria/situação/estado/motivo e listas');
+  await shot('10-relatorio-geral');
+  let wbg = await lerXlsx(await baixar('Exportar XLSX', 'relatorio-geral.xlsx'));
+  const abas = wbg.worksheets.map((w) => w.name);
+  assert.deepStrictEqual(abas, ['Resumo', 'Itens ativos', 'Itens baixados', 'Movimentações']);
+  const rg = resumoDe(wbg.getWorksheet('Resumo'));
+  assert.strictEqual(rg['Itens ativos'], 18);
+  assert.strictEqual(Number(rg['Valor de aquisição dos ativos']).toFixed(2), '20739.00');
+  assert.strictEqual(rg['Itens baixados (total)'], 1);
+  assert.strictEqual(wbg.getWorksheet('Itens ativos').rowCount, 2 + 18);
+  ok('XLSX geral: abas Resumo, Itens ativos (18), Itens baixados, Movimentações; totais conferem');
+  const pg = textoPdf(await baixar('Exportar PDF', 'relatorio-geral.pdf'));
+  for (const t of ['Relatório geral', 'Itens ativos por setor', '02 — Administrativo', 'Lista de itens ativos (18)', 'FZA.02.016', 'R$ 20.739,00', 'Itens baixados (1)', 'FZA.01.001']) assert.ok(pg.includes(t), 'PDF geral sem: ' + t);
+  ok('PDF geral com resumo, quadros e listas completas');
+  await page.selectOption('select[name=setor]', { label: '01 — Criação' });
+  await page.selectOption('select[name=detalhe]', 'resumo');
+  await page.click('button:has-text("Gerar relatório")');
+  await page.waitForLoadState('networkidle');
+  const kg1 = await page.$$eval('.kpi strong', (s) => s.map((x) => x.textContent.trim()));
+  assert.strictEqual(kg1[0], '1'); assert.strictEqual(await page.locator('text=Lista de itens ativos').count(), 0);
+  ok('Filtro de setor + "Somente resumo" no relatório geral');
+
+  // Inventário (itens) com baixados
+  await page.goto('/relatorios/inventario?situacao=todos');
+  const ki = await page.$$eval('.kpi strong', (s) => s.map((x) => x.textContent.trim()));
+  assert.strictEqual(ki[0], '18'); assert.strictEqual(ki[3], '1');
+  assert.strictEqual(await page.locator('.secao-rel tbody tr').count(), 19);
+  ok('Inventário (itens) com "Ativos e baixados": 18 + 1, totais separados');
+
+  // Por setor / por categoria
   await page.goto('/relatorios/setor');
-  await shot('10-relatorio-setor');
-  const dlx = await Promise.all([page.waitForEvent('download'), page.click('a:has-text("Exportar XLSX")')]);
-  const xlsxPath = path.join(OUT, 'relatorio-setor.xlsx'); await dlx[0].saveAs(xlsxPath);
-  const wb = new ExcelJS.Workbook(); await wb.xlsx.readFile(xlsxPath);
-  const ws = wb.worksheets[0];
-  const resumo = {}; ws.eachRow((row) => { const a = row.getCell(1).value; if (typeof a === 'string') resumo[a] = row.getCell(2).value; });
-  assert.strictEqual(resumo['Quantidade de itens'], 18);
-  assert.strictEqual(Number(resumo['Valor de aquisição registrado']).toFixed(2), '20739.00');
-  ok('XLSX por setor: 18 itens, R$ 20.739,00');
-  const dlp = await Promise.all([page.waitForEvent('download'), page.click('a:has-text("Exportar PDF")')]);
-  const relPdf = path.join(OUT, 'relatorio-setor.pdf'); await dlp[0].saveAs(relPdf);
-  assert.ok(fs.readFileSync(relPdf).slice(0, 5).toString() === '%PDF-'); ok('PDF do relatório por setor gerado');
+  wbg = await lerXlsx(await baixar('Exportar XLSX', 'relatorio-setor.xlsx'));
+  const rs = resumoDe(wbg.getWorksheet('Resumo'));
+  assert.strictEqual(rs['Itens'], 18);
+  assert.strictEqual(Number(rs['Valor de aquisição registrado']).toFixed(2), '20739.00');
+  assert.ok(textoPdf(await baixar('Exportar PDF', 'relatorio-setor.pdf')).includes('Subtotal 02 — Administrativo'));
+  ok('Por setor: XLSX 18 itens / R$ 20.739,00 e PDF com subtotais');
+  await page.goto('/relatorios/categoria');
+  assert.ok((await page.textContent('main')).includes('Subtotal Mouse: 15 itens'));
+  await baixar('Exportar PDF', 'relatorio-categoria.pdf');
+  ok('Por categoria: subtotal "Mouse: 15 itens"');
 
   await page.goto('/relatorios/baixas?inicio=2020-01-01');
-  assert.ok((await page.textContent('.tabela')).includes('FZA.01.001'));
-  await Promise.all([page.waitForEvent('download'), page.click('a:has-text("Exportar PDF")')]).then(([d]) => d.saveAs(path.join(OUT, 'relatorio-baixas.pdf')));
-  await Promise.all([page.waitForEvent('download'), page.click('a:has-text("Exportar XLSX")')]).then(([d]) => d.saveAs(path.join(OUT, 'relatorio-baixas.xlsx')));
+  assert.ok((await page.textContent('main')).includes('FZA.01.001'));
+  await baixar('Exportar PDF', 'relatorio-baixas.pdf'); await baixar('Exportar XLSX', 'relatorio-baixas.xlsx');
   ok('Relatório de baixas com período lista FZA.01.001 (PDF e XLSX exportados)');
   await page.goto('/relatorios/transferencias?inicio=2020-01-01');
-  assert.ok((await page.textContent('.tabela')).includes('FZA.01.002'));
-  await Promise.all([page.waitForEvent('download'), page.click('a:has-text("Exportar PDF")')]).then(([d]) => d.saveAs(path.join(OUT, 'relatorio-transferencias.pdf')));
+  assert.ok((await page.textContent('main')).includes('FZA.01.002'));
+  await baixar('Exportar PDF', 'relatorio-transferencias.pdf');
   ok('Relatório de transferências lista FZA.01.002');
-  await page.goto('/relatorios/geral');
-  await Promise.all([page.waitForEvent('download'), page.click('a:has-text("Exportar PDF")')]).then(([d]) => d.saveAs(path.join(OUT, 'relatorio-geral.pdf')));
   await page.goto('/relatorios/transferencias?inicio=2099-01-01');
-  assert.ok(await page.isVisible('text=Nenhum registro encontrado')); ok('Filtro de período funciona');
+  assert.ok(await page.isVisible('text=Nenhum registro para os filtros aplicados')); ok('Filtro de período funciona');
 
   console.log('9. Busca e filtros');
   await page.goto('/equipamentos?busca=SN-7M3');
