@@ -1,0 +1,56 @@
+<%- include('../partials/top', { titulo: 'Equipamentos' }) %>
+<div class="cabecalho">
+  <div><h1>Equipamentos</h1><p class="sub"><%= totais.quantidade %> <%= totais.quantidade === 1 ? 'item' : 'itens' %> · <%= u.moedaTotal(totais.valor) %><%= totais.sem_valor ? ` · ${totais.sem_valor} sem valor informado` : '' %></p></div>
+  <div class="botoes"><a class="btn primario" href="/equipamentos/novo">+ Cadastrar</a></div>
+</div>
+
+<form class="cartao filtros" method="get" action="/equipamentos">
+  <label class="busca">Buscar<input type="search" name="busca" value="<%= f.busca %>" placeholder="Código, nome ou nº de série"></label>
+  <label>Setor<select name="setor"><option value="">Todos</option><% opcoes.setores.forEach(s => { %><option value="<%= s.id %>" <%= f.setor === s.id ? 'selected' : '' %>><%= s.codigo %> — <%= s.nome %></option><% }) %></select></label>
+  <label>Categoria<select name="categoria"><option value="">Todas</option><% opcoes.categorias.forEach(c => { %><option value="<%= c.id %>" <%= f.categoria === c.id ? 'selected' : '' %>><%= c.nome %></option><% }) %></select></label>
+  <label>Responsável<input name="responsavel" list="lista-resp" value="<%= f.responsavel %>"></label>
+  <datalist id="lista-resp"><% opcoes.responsaveis.forEach(r => { %><option value="<%= r %>"><% }) %></datalist>
+  <label>Estado<select name="estado"><option value="">Todos</option><% Object.entries(u.ESTADOS).forEach(([k, v]) => { %><option value="<%= k %>" <%= f.estado === k ? 'selected' : '' %>><%= v %></option><% }) %></select></label>
+  <label>Situação<select name="situacao">
+    <option value="ativos" <%= f.situacao === 'ativos' ? 'selected' : '' %>>Ativos</option>
+    <% Object.entries(u.SITUACOES).forEach(([k, v]) => { %><option value="<%= k %>" <%= f.situacao === k ? 'selected' : '' %>><%= v %></option><% }) %>
+    <option value="todos" <%= f.situacao === 'todos' ? 'selected' : '' %>>Todos, inclusive baixados</option>
+  </select></label>
+  <div class="filtros-acoes"><button class="btn primario">Filtrar</button><a class="btn" href="/equipamentos">Limpar</a></div>
+</form>
+
+<div class="cartao sem-pad">
+  <% if (!itens.length) { %><p class="vazio">Nenhum equipamento encontrado.</p><% } else { %>
+  <div class="tabela-wrap">
+  <table class="tabela">
+    <thead><tr>
+      <th>Código</th><th>Descrição</th><th class="m-ocultar">Categoria</th><th class="m-ocultar">Nº de série</th><th>Setor</th><th class="m-ocultar">Responsável</th><th class="m-ocultar">Estado</th><th>Situação</th><th class="num">Valor</th>
+    </tr></thead>
+    <tbody>
+      <% itens.forEach(e => { %>
+      <tr class="<%= e.situacao === 'baixado' ? 'baixado' : '' %>">
+        <td><a class="codigo" href="/equipamentos/<%= e.id %>"><%= e.codigo %></a></td>
+        <td><a href="/equipamentos/<%= e.id %>"><%= e.descricao %></a><% if (e.marca || e.modelo) { %><small class="linha2"><%= [e.marca, e.modelo].filter(Boolean).join(' ') %></small><% } %></td>
+        <td class="m-ocultar"><%= e.categoria %></td>
+        <td class="m-ocultar mono"><%= e.numero_serie || '—' %></td>
+        <td><span title="<%= e.setor_nome %>"><%= e.setor_codigo %></span> <span class="m-ocultar"><%= e.setor_nome %></span></td>
+        <td class="m-ocultar"><%= e.responsavel || '—' %></td>
+        <td class="m-ocultar"><%= u.ESTADOS[e.estado] %></td>
+        <td><span class="etq sit-<%= e.situacao %>"><%= u.SITUACOES[e.situacao] %></span></td>
+        <td class="num <%= e.valor_aquisicao === null ? 'sem-valor' : '' %>"><%= u.moeda(e.valor_aquisicao) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  </div>
+  <% } %>
+</div>
+
+<% if (paginas > 1) { %>
+<nav class="paginacao">
+  <% if (pagina > 1) { %><a class="btn sm" href="/equipamentos<%= u.qs(f, { pagina: pagina - 1, situacao: f.situacao === 'ativos' ? '' : f.situacao }) %>">← Anterior</a><% } %>
+  <span>Página <%= pagina %> de <%= paginas %></span>
+  <% if (pagina < paginas) { %><a class="btn sm" href="/equipamentos<%= u.qs(f, { pagina: pagina + 1, situacao: f.situacao === 'ativos' ? '' : f.situacao }) %>">Próxima →</a><% } %>
+</nav>
+<% } %>
+<%- include('../partials/bottom') %>

@@ -1,0 +1,68 @@
+<%- include('../partials/top', { titulo: 'Setores' }) %>
+<div class="cabecalho"><div><h1>Setores</h1><p class="sub">O código de dois dígitos do setor compõe o código patrimonial (FZA.<strong>01</strong>.001) e não pode ser alterado depois de criado.</p></div></div>
+<%- include('../partials/erros', { erros }) %>
+
+<div class="grade-2 larga-esq">
+  <section class="cartao sem-pad">
+    <div class="tabela-wrap"><table class="tabela">
+      <thead><tr><th>Código</th><th>Nome</th><th>Responsável</th><th class="num">Itens ativos</th><th class="num m-ocultar">Próximo código</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+      <% if (!setores.length) { %><tr><td colspan="7" class="vazio">Nenhum setor cadastrado. Crie o primeiro ao lado.</td></tr><% } %>
+      <% setores.forEach(s => { %>
+        <% if (editar === s.id) { %>
+        <tr class="editando"><td colspan="7">
+          <form class="linha-form" method="post" action="/setores/<%= s.id %>">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <strong class="mono"><%= s.codigo %></strong>
+            <input name="nome" value="<%= s.nome %>" required maxlength="80" aria-label="Nome">
+            <input name="responsavel" value="<%= s.responsavel || '' %>" placeholder="Responsável" maxlength="120" aria-label="Responsável">
+            <label class="check"><input type="checkbox" name="ativo" <%= s.ativo ? 'checked' : '' %>> Ativo</label>
+            <button class="btn primario sm">Salvar</button><a class="btn sm" href="/setores">Cancelar</a>
+          </form>
+        </td></tr>
+        <% } else { %>
+        <tr class="<%= s.ativo ? '' : 'baixado' %>">
+          <td class="mono"><strong><%= s.codigo %></strong></td>
+          <td><a href="/equipamentos?setor=<%= s.id %>"><%= s.nome %></a></td>
+          <td><%= s.responsavel || '—' %></td>
+          <td class="num"><%= s.ativos %></td>
+          <td class="num mono m-ocultar"><%= u.formatarCodigo(s.codigo, s.ultimo_sequencial + 1) %></td>
+          <td><span class="etq <%= s.ativo ? 'sit-em_uso' : 'sit-baixado' %>"><%= s.ativo ? 'Ativo' : 'Inativo' %></span></td>
+          <td><a class="btn sm" href="/setores?editar=<%= s.id %>">Editar</a></td>
+        </tr>
+        <% } %>
+      <% }) %>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="cartao">
+    <h2>Novo setor</h2>
+    <form class="formulario" method="post" action="/setores">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>Código (2 dígitos) *<input name="codigo" value="<%= form.codigo || '' %>" required pattern="[0-9]{1,2}" maxlength="2" inputmode="numeric" placeholder="01"></label>
+      <label>Nome *<input name="nome" value="<%= form.nome || '' %>" required maxlength="80" placeholder="Criação"></label>
+      <label>Responsável pelo setor<input name="responsavel" value="<%= form.responsavel || '' %>" maxlength="120"></label>
+      <div class="acoes"><button class="btn primario">Cadastrar setor</button></div>
+    </form>
+  </section>
+</div>
+
+<section class="cartao" id="categorias">
+  <div class="cartao-topo"><h2>Categorias de equipamento</h2></div>
+  <div class="chips">
+    <% categorias.forEach(c => { %>
+    <form method="post" action="/setores/categorias/<%= c.id %>/alternar" class="chip <%= c.ativo ? '' : 'inativa' %>">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <span><%= c.nome %> <small>(<%= c.itens %>)</small></span>
+      <button class="link" title="<%= c.ativo ? 'Desativar' : 'Reativar' %>"><%= c.ativo ? '×' : '↺' %></button>
+    </form>
+    <% }) %>
+  </div>
+  <form class="linha-form" method="post" action="/setores/categorias">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input name="nome" placeholder="Nova categoria" required maxlength="60" aria-label="Nova categoria">
+    <button class="btn sm">Adicionar</button>
+  </form>
+</section>
+<%- include('../partials/bottom') %>

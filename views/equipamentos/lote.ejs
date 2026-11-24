@@ -1,0 +1,12 @@
+<%- include('../partials/top', { titulo: 'Itens cadastrados' }) %>
+<div class="cabecalho">
+  <div><h1><%= itens.length %> itens cadastrados</h1><p class="sub">Uma ficha e um código patrimonial foram gerados para cada unidade. Use estes códigos na etiquetadora.</p></div>
+  <div class="botoes"><a class="btn primario" href="/equipamentos/novo">+ Cadastrar outro</a></div>
+</div>
+<div class="cartao sem-pad"><div class="tabela-wrap"><table class="tabela">
+  <thead><tr><th>Código</th><th>Descrição</th><th>Nº de série</th><th>Setor</th><th class="num">Valor</th></tr></thead>
+  <tbody><% itens.forEach(e => { %>
+    <tr><td><a class="codigo" href="/equipamentos/<%= e.id %>"><%= e.codigo %></a></td><td><%= e.descricao %></td><td class="mono"><%= e.numero_serie || '—' %></td><td><%= e.setor_codigo %> — <%= e.setor_nome %></td><td class="num <%= e.valor_aquisicao === null ? 'sem-valor' : '' %>"><%= u.moeda(e.valor_aquisicao) %></td></tr>
+  <% }) %></tbody>
+</table></div></div>
+<%- include('../partials/bottom') %>

@@ -1,0 +1,20 @@
+<%- include('../partials/top', { titulo: 'Baixa ' + item.codigo }) %>
+<div class="cabecalho"><div>
+  <a class="voltar" href="/equipamentos/<%= item.id %>">← <%= item.codigo %></a>
+  <h1>Dar baixa patrimonial</h1>
+  <p class="sub"><strong><%= item.codigo %></strong> · <%= item.descricao %> · <%= item.setor_codigo %> — <%= item.setor_nome %> · <%= u.moeda(item.valor_aquisicao) %></p>
+</div></div>
+<%- include('../partials/erros', { erros }) %>
+<form class="cartao formulario estreito" method="post" action="/equipamentos/<%= item.id %>/baixa" id="formBaixa" data-codigo="<%= item.codigo %>">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="alerta aviso">A baixa é definitiva: o item sai do inventário ativo e não poderá mais ser editado ou transferido. A ficha, o código e o histórico continuam disponíveis para consulta.</div>
+  <label>Data da baixa *<input type="date" name="data" value="<%= form.data || u.hoje() %>" max="<%= u.hoje() %>" required></label>
+  <label>Motivo *<select name="motivo" required>
+    <option value="">Selecione…</option>
+    <% Object.entries(MOTIVOS_BAIXA).forEach(([k, v]) => { %><option value="<%= k %>" <%= form.motivo === k ? 'selected' : '' %>><%= v %></option><% }) %>
+  </select></label>
+  <label>Observações<textarea name="observacoes" rows="4" maxlength="2000" placeholder="Ex.: número do boletim de ocorrência, comprador, instituição beneficiada…"><%= form.observacoes || '' %></textarea></label>
+  <label class="check confirmar"><input type="checkbox" name="confirmar" value="sim" required> Confirmo a baixa patrimonial do item <strong><%= item.codigo %></strong>.</label>
+  <div class="acoes"><a class="btn" href="/equipamentos/<%= item.id %>">Cancelar</a><button class="btn perigo">Registrar baixa</button></div>
+</form>
+<%- include('../partials/bottom') %>

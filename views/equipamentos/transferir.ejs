@@ -1,0 +1,25 @@
+<%- include('../partials/top', { titulo: 'Transferir ' + item.codigo }) %>
+<div class="cabecalho"><div>
+  <a class="voltar" href="/equipamentos/<%= item.id %>">← <%= item.codigo %></a>
+  <h1>Transferir equipamento</h1>
+  <p class="sub"><strong><%= item.codigo %></strong> · <%= item.descricao %></p>
+</div></div>
+<%- include('../partials/erros', { erros }) %>
+<form class="cartao formulario estreito" method="post" action="/equipamentos/<%= item.id %>/transferir">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <div class="resumo-transf">
+    <div><span>Setor atual</span><strong><%= item.setor_codigo %> — <%= item.setor_nome %></strong><small>Responsável: <%= item.responsavel || '—' %></small></div>
+    <div class="seta">→</div>
+    <div><span>Código patrimonial</span><strong class="mono"><%= item.codigo %></strong><small>permanece o mesmo</small></div>
+  </div>
+  <label>Setor de destino *<select name="setor_destino_id" required>
+    <option value="">Selecione…</option>
+    <% setores.forEach(s => { %><option value="<%= s.id %>" <%= String(s.id) === String(form.setor_destino_id) ? 'selected' : '' %>><%= s.codigo %> — <%= s.nome %><%= s.id === item.setor_id ? ' (atual — só trocar responsável)' : '' %></option><% }) %>
+  </select></label>
+  <label>Novo responsável<input name="responsavel" value="<%= form.responsavel || '' %>" list="lista-resp" maxlength="120"><small>Deixe em branco se o item ficar sem responsável.</small></label>
+  <datalist id="lista-resp"><% responsaveis.forEach(r => { %><option value="<%= r %>"><% }) %></datalist>
+  <label>Data da transferência *<input type="date" name="data" value="<%= form.data || u.hoje() %>" max="<%= u.hoje() %>" required></label>
+  <label>Observações<textarea name="observacoes" rows="3" maxlength="1000"><%= form.observacoes || '' %></textarea></label>
+  <div class="acoes"><a class="btn" href="/equipamentos/<%= item.id %>">Cancelar</a><button class="btn primario">Registrar transferência</button></div>
+</form>
+<%- include('../partials/bottom') %>

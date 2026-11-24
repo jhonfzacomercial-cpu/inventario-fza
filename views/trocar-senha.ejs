@@ -1,0 +1,13 @@
+<%- include('partials/top', { titulo: 'Alterar senha' }) %>
+<div class="cabecalho"><h1>Alterar senha</h1></div>
+<form class="cartao estreito" method="post" action="/trocar-senha">
+  <% if (obrigatoria) { %><div class="alerta aviso">Por segurança, defina uma nova senha antes de continuar.</div><% } %>
+  <% if (erro) { %><div class="alerta erro"><%= erro %></div><% } %>
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <label>Senha atual<input type="password" name="senha_atual" required autocomplete="current-password"></label>
+  <label>Nova senha<input type="password" name="nova_senha" required minlength="8" autocomplete="new-password"></label>
+  <label>Confirme a nova senha<input type="password" name="confirmacao" required minlength="8" autocomplete="new-password"></label>
+  <p class="dica">Mínimo de 8 caracteres, com letras e números.</p>
+  <div class="acoes"><button class="btn primario">Salvar nova senha</button></div>
+</form>
+<%- include('partials/bottom') %>

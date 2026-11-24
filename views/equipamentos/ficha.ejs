@@ -1,0 +1,79 @@
+<%- include('../partials/top', { titulo: item.codigo }) %>
+<% const baixado = item.situacao === 'baixado'; %>
+<div class="cabecalho ficha-topo">
+  <div>
+    <a class="voltar" href="/equipamentos">← Equipamentos</a>
+    <div class="codigo-grande"><%= item.codigo %></div>
+    <h1><%= item.descricao %></h1>
+    <p class="sub"><span class="etq sit-<%= item.situacao %>"><%= u.SITUACOES[item.situacao] %></span> · <%= item.categoria %> · Setor atual: <strong><%= item.setor_codigo %> — <%= item.setor_nome %></strong></p>
+  </div>
+  <div class="botoes acoes-ficha">
+    <% if (!baixado) { %>
+    <a class="btn" href="/equipamentos/<%= item.id %>/editar"><svg viewBox="0 0 24 24"><path d="M3 17.2V21h3.8l11-11-3.8-3.8zM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.8 3.8z"/></svg>Editar</a>
+    <a class="btn primario" href="/equipamentos/<%= item.id %>/transferir"><svg viewBox="0 0 24 24"><path d="M16 3l5 5-5 5V9.5H4v-3h12zM8 11v3.5h12v3H8V21l-5-5z"/></svg>Transferir</a>
+    <a class="btn perigo" href="/equipamentos/<%= item.id %>/baixa"><svg viewBox="0 0 24 24"><path d="M6 7h12l-1 14H7zm3-4h6l1 2h4v2H4V5h4z"/></svg>Dar baixa</a>
+    <% } %>
+  </div>
+</div>
+
+<% if (baixado) { %>
+<div class="alerta baixa">
+  <strong>Item baixado em <%= u.data(item.baixa_data) %></strong> — motivo: <%= u.MOTIVOS_BAIXA[item.baixa_motivo] %>.
+  <% if (item.baixa_observacoes) { %><br><%= item.baixa_observacoes %><% } %>
+  <br><small>Registrado por <%= item.baixa_usuario %> em <%= u.dataHora(item.baixa_registrada_em) %>. O item não entra nos totais do inventário ativo; o código <%= item.codigo %> não será reutilizado.</small>
+</div>
+<% } %>
+
+<div class="grade-ficha">
+  <section class="cartao">
+    <h2>Ficha do equipamento</h2>
+    <dl class="dados">
+      <div><dt>Código patrimonial</dt><dd class="mono"><strong><%= item.codigo %></strong></dd></div>
+      <div><dt>Setor de cadastro (código)</dt><dd><%= item.setor_origem_codigo %> — <%= item.setor_origem_nome %></dd></div>
+      <div><dt>Setor atual</dt><dd><%= item.setor_codigo %> — <%= item.setor_nome %></dd></div>
+      <div><dt>Responsável</dt><dd><%= item.responsavel || '—' %></dd></div>
+      <div><dt>Categoria</dt><dd><%= item.categoria %></dd></div>
+      <div><dt>Marca</dt><dd><%= item.marca || '—' %></dd></div>
+      <div><dt>Modelo</dt><dd><%= item.modelo || '—' %></dd></div>
+      <div><dt>Número de série</dt><dd class="mono"><%= item.numero_serie || '—' %></dd></div>
+      <div><dt>Data de aquisição</dt><dd><%= u.data(item.data_aquisicao) %></dd></div>
+      <div><dt>Valor unitário</dt><dd class="<%= item.valor_aquisicao === null ? 'sem-valor' : '' %>"><%= u.moeda(item.valor_aquisicao) %></dd></div>
+      <div><dt>Estado de conservação</dt><dd><%= u.ESTADOS[item.estado] %></dd></div>
+      <div><dt>Situação patrimonial</dt><dd><%= u.SITUACOES[item.situacao] %></dd></div>
+      <div class="col-2"><dt>Observações</dt><dd class="pre"><%= item.observacoes || '—' %></dd></div>
+    </dl>
+    <p class="meta">Cadastrado por <%= meta.criado_por || '—' %> em <%= u.dataHora(meta.criado_em) %> · Última alteração por <%= meta.atualizado_por || '—' %> em <%= u.dataHora(meta.atualizado_em) %></p>
+  </section>
+
+  <aside class="cartao foto-cartao">
+    <% if (item.tem_foto) { %>
+      <a href="/equipamentos/<%= item.id %>/foto" target="_blank"><img src="/equipamentos/<%= item.id %>/foto" alt="Foto de <%= item.descricao %>"></a>
+    <% } else { %>
+      <div class="sem-foto">Sem foto</div>
+    <% } %>
+  </aside>
+</div>
+
+<section class="cartao">
+  <h2>Histórico</h2>
+  <ul class="timeline">
+    <% historico.forEach(m => { %>
+    <li class="tl-<%= m.tipo %>">
+      <div class="tl-linha"><span class="etq tipo-<%= m.tipo %>"><%= u.TIPOS_MOV[m.tipo] %></span> <strong><%= u.data(m.data_movimentacao) %></strong></div>
+      <div class="tl-detalhe">
+        <% if (m.tipo === 'cadastro') { %>Cadastrado no setor <%= m.destino_codigo %> — <%= m.destino_nome %><%= m.responsavel_novo ? `, responsável ${m.responsavel_novo}` : '' %>.<% if (m.detalhes && m.detalhes.lote) { %> Unidade <%= m.detalhes.lote %> do lote.<% } %><% if (m.detalhes && m.detalhes.origem === 'whatsapp') { %> Cadastro feito pelo WhatsApp.<% } %>
+        <% } else if (m.tipo === 'transferencia') { %>De <strong><%= m.origem_codigo %> — <%= m.origem_nome %></strong> para <strong><%= m.destino_codigo %> — <%= m.destino_nome %></strong>.
+          <% if ((m.responsavel_anterior || '') !== (m.responsavel_novo || '')) { %> Responsável: <%= m.responsavel_anterior || '—' %> → <%= m.responsavel_novo || '—' %>.<% } %>
+        <% } else if (m.tipo === 'responsavel') { %>Responsável: <%= m.responsavel_anterior || '—' %> → <%= m.responsavel_novo || '—' %>.
+        <% } else if (m.tipo === 'baixa') { %>Baixa por <strong><%= u.MOTIVOS_BAIXA[m.detalhes && m.detalhes.motivo] || '' %></strong>.
+        <% } else if (m.tipo === 'edicao' && m.detalhes && m.detalhes.campos) { %>
+          <ul class="mudancas"><% Object.entries(m.detalhes.campos).forEach(([k, d]) => { %><li><%= u.CAMPOS_LABEL[k] || k %>: <s><%= u.descreverValor(k, d.de) %></s> → <%= u.descreverValor(k, d.para) %></li><% }) %></ul>
+        <% } %>
+        <% if (m.observacoes) { %><div class="obs"><%= m.observacoes %></div><% } %>
+        <span class="quem"><%= m.usuario %> (<%= m.usuario_login %>) · registrado em <%= u.dataHora(m.registrado_em) %></span>
+      </div>
+    </li>
+    <% }) %>
+  </ul>
+</section>
+<%- include('../partials/bottom') %>

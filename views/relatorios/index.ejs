@@ -1,0 +1,60 @@
+<%- include('../partials/top', { titulo: r.titulo }) %>
+<% const o = r.opcoes; const periodo = tipo === 'transferencias' || tipo === 'baixas';
+   const qsBase = new URLSearchParams(Object.entries(query).filter(([k, v]) => k !== 'formato' && v)).toString(); %>
+<div class="cabecalho">
+  <div><h1>Relatórios</h1><p class="sub"><%= r.filtros %></p></div>
+  <div class="botoes">
+    <a class="btn" href="/relatorios/<%= tipo %>?<%= qsBase %>&formato=pdf">Exportar PDF</a>
+    <a class="btn" href="/relatorios/<%= tipo %>?<%= qsBase %>&formato=xlsx">Exportar XLSX</a>
+  </div>
+</div>
+
+<nav class="abas">
+  <% Object.entries(TIPOS).forEach(([k, v]) => { %><a class="<%= k === tipo ? 'ativo' : '' %>" href="/relatorios/<%= k %>"><%= v %></a><% }) %>
+</nav>
+
+<form class="cartao filtros" method="get" action="/relatorios/<%= tipo %>">
+  <label class="busca">Buscar<input type="search" name="busca" value="<%= f.busca %>" placeholder="Código, nome ou nº de série"></label>
+  <label>Setor<select name="setor"><option value="">Todos</option><% o.setores.forEach(s => { %><option value="<%= s.id %>" <%= f.setor === s.id ? 'selected' : '' %>><%= s.codigo %> — <%= s.nome %></option><% }) %></select></label>
+  <label>Categoria<select name="categoria"><option value="">Todas</option><% o.categorias.forEach(c => { %><option value="<%= c.id %>" <%= f.categoria === c.id ? 'selected' : '' %>><%= c.nome %></option><% }) %></select></label>
+  <% if (!periodo) { %>
+  <label>Responsável<input name="responsavel" list="lista-resp" value="<%= f.responsavel %>"></label>
+  <datalist id="lista-resp"><% o.responsaveis.forEach(x => { %><option value="<%= x %>"><% }) %></datalist>
+  <label>Estado<select name="estado"><option value="">Todos</option><% Object.entries(u.ESTADOS).forEach(([k, v]) => { %><option value="<%= k %>" <%= f.estado === k ? 'selected' : '' %>><%= v %></option><% }) %></select></label>
+  <label>Situação<select name="situacao"><option value="ativos">Todos os ativos</option><% u.SITUACOES_ATIVAS.forEach(k => { %><option value="<%= k %>" <%= f.situacao === k ? 'selected' : '' %>><%= u.SITUACOES[k] %></option><% }) %></select></label>
+  <% } else { %>
+  <label>De<input type="date" name="inicio" value="<%= f.inicio %>"></label>
+  <label>Até<input type="date" name="fim" value="<%= f.fim %>"></label>
+  <% if (tipo === 'baixas') { %>
+  <label>Motivo<select name="motivo"><option value="">Todos</option><% Object.entries(u.MOTIVOS_BAIXA).forEach(([k, v]) => { %><option value="<%= k %>" <%= f.motivo === k ? 'selected' : '' %>><%= v %></option><% }) %></select></label>
+  <% } %>
+  <% } %>
+  <div class="filtros-acoes"><button class="btn primario">Aplicar</button><a class="btn" href="/relatorios/<%= tipo %>">Limpar</a></div>
+</form>
+
+<div class="kpis">
+  <% r.resumo.forEach(x => { %>
+  <div class="kpi <%= x.tipo === 'texto' ? 'pequeno' : '' %>"><span><%= x.label %></span><strong><%= exp.formatarResumo(x) %></strong></div>
+  <% }) %>
+</div>
+
+<div class="cartao sem-pad">
+  <% if (!r.linhas.length) { %><p class="vazio">Nenhum registro encontrado para os filtros aplicados.</p><% } else { %>
+  <div class="tabela-wrap"><table class="tabela relatorio">
+    <thead><tr><% r.colunas.forEach(c => { %><th class="<%= c.tipo === 'moeda' ? 'num' : '' %>"><%= c.titulo %></th><% }) %></tr></thead>
+    <tbody>
+      <% r.linhas.forEach(l => { %>
+        <% if (l._tipo === 'grupo') { %><tr class="grupo"><td colspan="<%= r.colunas.length %>"><%= l.texto %></td></tr>
+        <% } else if (l._tipo === 'subtotal') { %><tr class="subtotal"><td colspan="<%= r.colunas.length %>"><%= l.texto %></td></tr>
+        <% } else { %>
+        <tr><% r.colunas.forEach(c => { const v = exp.formatar(c, l[c.key]); %>
+          <td class="<%= c.tipo === 'moeda' ? 'num' : '' %> <%= c.tipo === 'moeda' && l[c.key] === null ? 'sem-valor' : '' %>">
+            <% if (c.key === 'codigo') { %><a class="codigo" href="/equipamentos/<%= l.id %>"><%= v %></a><% } else { %><%= v %><% } %>
+          </td><% }) %></tr>
+        <% } %>
+      <% }) %>
+    </tbody>
+  </table></div>
+  <% } %>
+</div>
+<%- include('../partials/bottom') %>

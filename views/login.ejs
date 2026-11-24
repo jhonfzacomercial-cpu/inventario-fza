@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · Inventário Grupo FZA</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body class="tela-login">
+  <form class="cartao login" method="post" action="/login" autocomplete="on">
+    <div class="marca"><span class="logo">FZA</span><div><strong>Grupo FZA</strong><small>Inventário patrimonial</small></div></div>
+    <% if (erro) { %><div class="alerta erro"><%= erro %></div><% } %>
+    <% if (flash) { %><div class="alerta <%= flash.tipo %>"><%= flash.msg %></div><% } %>
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Login<input name="login" value="<%= login %>" required autofocus autocapitalize="none" autocomplete="username"></label>
+    <label>Senha<input name="senha" type="password" required autocomplete="current-password"></label>
+    <button class="btn primario largo">Entrar</button>
+  </form>
+</body>
+</html>

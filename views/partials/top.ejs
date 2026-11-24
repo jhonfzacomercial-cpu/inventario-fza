@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= typeof titulo !== 'undefined' ? titulo + ' · ' : '' %>Inventário Grupo FZA</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<% const ativo = (p) => path === p || (p !== '/' && path.startsWith(p)) ? 'ativo' : ''; %>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="marca">
+      <span class="logo">FZA</span>
+      <div><strong>Grupo FZA</strong><small>Inventário patrimonial</small></div>
+    </div>
+    <nav>
+      <a class="<%= ativo('/') %>" href="/"><svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zm0 8h8v-6H3zm10 0h8V11h-8zm0-18v6h8V3z"/></svg>Painel</a>
+      <a class="<%= ativo('/equipamentos') %>" href="/equipamentos"><svg viewBox="0 0 24 24"><path d="M4 5h16v10H4zM2 17h20v2H2zM6 7v6h12V7z"/></svg>Equipamentos</a>
+      <a class="<%= ativo('/setores') %>" href="/setores"><svg viewBox="0 0 24 24"><path d="M12 3 2 8v2h20V8zM4 12h3v6H4zm6.5 0h3v6h-3zM17 12h3v6h-3zM2 20h20v2H2z"/></svg>Setores</a>
+      <a class="<%= ativo('/relatorios') %>" href="/relatorios"><svg viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5zm9 1.5V8h3.5zM8 12h8v1.5H8zm0 3h8v1.5H8zm0 3h5v1.5H8z"/></svg>Relatórios</a>
+      <% if (user && user.perfil === 'admin') { %>
+      <a class="<%= ativo('/usuarios') %>" href="/usuarios"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4m0 2c-4 0-8 2-8 5v2h16v-2c0-3-4-5-8-5"/></svg>Usuários</a>
+      <a class="<%= ativo('/whatsapp') %>" href="/whatsapp"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2m0 2a8 8 0 1 1-4.1 14.9l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 0 1 12 4m-3.2 4c-.2 0-.5 0-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3 2.4 1 2.9.8 3.4.7.5 0 1.7-.7 1.9-1.4s.2-1.2.2-1.4l-.5-.3-1.7-.8c-.3-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3l.1-.4-.8-1.9c-.2-.5-.4-.4-.6-.4z"/></svg>WhatsApp</a>
+      <% } %>
+    </nav>
+    <div class="conta">
+      <div class="conta-info"><strong><%= user.nome %></strong><small><%= user.login %> · <%= user.perfil === 'admin' ? 'Administrador' : 'Operador' %></small></div>
+      <a href="/trocar-senha">Alterar senha</a>
+      <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="link">Sair</button></form>
+    </div>
+  </aside>
+  <div class="sombra" id="sombra"></div>
+  <main class="conteudo">
+    <header class="topo-mobile">
+      <button class="menu-btn" id="menuBtn" aria-label="Abrir menu"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg></button>
+      <strong>Grupo FZA</strong>
+      <a class="btn sm" href="/equipamentos/novo">+ Novo</a>
+    </header>
+    <% if (flash) { %><div class="alerta <%= flash.tipo %>"><%= flash.msg %></div><% } %>

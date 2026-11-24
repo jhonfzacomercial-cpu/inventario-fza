@@ -1,0 +1,54 @@
+<%- include('partials/top', { titulo: 'Painel' }) %>
+<div class="cabecalho">
+  <div><h1>Painel</h1><p class="sub">Visão geral do inventário ativo</p></div>
+  <div class="botoes"><a class="btn primario" href="/equipamentos/novo">+ Cadastrar equipamento</a></div>
+</div>
+
+<div class="kpis">
+  <a class="kpi" href="/equipamentos"><span>Itens ativos</span><strong><%= totais.quantidade %></strong></a>
+  <a class="kpi" href="/relatorios/geral"><span>Valor de aquisição registrado</span><strong><%= u.moedaTotal(totais.valor) %></strong><small>somente itens ativos com valor informado</small></a>
+  <a class="kpi <%= totais.sem_valor ? 'atencao' : '' %>" href="/relatorios/geral"><span>Ativos sem valor informado</span><strong><%= totais.sem_valor %></strong></a>
+  <a class="kpi neutro" href="/relatorios/baixas"><span>Itens baixados</span><strong><%= baixados %></strong><small>fora dos totais ativos</small></a>
+</div>
+
+<div class="grade-2">
+  <section class="cartao">
+    <div class="cartao-topo"><h2>Movimentações recentes</h2><a href="/relatorios/transferencias">Ver relatório</a></div>
+    <% if (!recentes.length) { %><p class="vazio">Nenhuma movimentação registrada ainda.</p><% } else { %>
+    <ul class="timeline">
+      <% recentes.forEach(m => { %>
+      <li class="tl-<%= m.tipo %>">
+        <div class="tl-linha">
+          <span class="etq tipo-<%= m.tipo %>"><%= u.TIPOS_MOV[m.tipo] %></span>
+          <a class="codigo" href="/equipamentos/<%= m.equipamento_id %>"><%= m.codigo %></a>
+          <span class="desc"><%= m.descricao %></span>
+        </div>
+        <div class="tl-detalhe">
+          <% if (m.tipo === 'transferencia') { %><%= m.origem_codigo %> — <%= m.origem_nome %> → <%= m.destino_codigo %> — <%= m.destino_nome %>
+          <% } else if (m.tipo === 'cadastro') { %>Setor <%= m.destino_codigo %> — <%= m.destino_nome %>
+          <% } else if (m.tipo === 'responsavel') { %>Responsável: <%= m.responsavel_anterior || '—' %> → <%= m.responsavel_novo || '—' %>
+          <% } %>
+          <span class="quem"><%= m.usuario %> · <%= u.dataHora(m.registrado_em) %></span>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="cartao">
+    <div class="cartao-topo"><h2>Itens ativos por setor</h2><a href="/relatorios/setor">Relatório</a></div>
+    <% if (!porSetor.length) { %><p class="vazio">Nenhum item ativo. <a href="/setores">Cadastre setores</a> e depois os equipamentos.</p><% } else { %>
+    <% const max = Math.max(...porSetor.map(s => s.quantidade)); %>
+    <div class="barras">
+      <% porSetor.forEach(s => { %>
+      <a class="barra" href="/equipamentos?setor=<%= s.id %>">
+        <div class="barra-rotulo"><strong><%= s.codigo %></strong> <%= s.nome %><span><%= s.quantidade %> · <%= u.moedaTotal(s.valor) %></span></div>
+        <div class="barra-trilho"><div style="width: <%= Math.max(3, Math.round(s.quantidade / max * 100)) %>%"></div></div>
+      </a>
+      <% }) %>
+    </div>
+    <% } %>
+  </section>
+</div>
+<%- include('partials/bottom') %>

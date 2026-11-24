@@ -1,0 +1,79 @@
+<%- include('../partials/top', { titulo: novo ? 'Cadastrar equipamento' : 'Editar ' + item.codigo }) %>
+<% const val = (k) => item[k] === null || item[k] === undefined ? '' : item[k]; %>
+<div class="cabecalho">
+  <div>
+    <% if (!novo) { %><a class="voltar" href="/equipamentos/<%= item.id %>">← <%= item.codigo %></a><% } %>
+    <h1><%= novo ? 'Cadastrar equipamento' : 'Editar ficha' %></h1>
+    <% if (novo) { %><p class="sub">O código patrimonial é gerado automaticamente pelo sistema ao salvar.</p><% } %>
+  </div>
+</div>
+<%- include('../partials/erros', { erros }) %>
+<form class="cartao formulario" method="post" enctype="multipart/form-data" action="<%= novo ? '/equipamentos/novo' : `/equipamentos/${item.id}/editar` %>">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+
+  <fieldset>
+    <legend>Identificação</legend>
+    <div class="campos">
+      <label class="col-2">Nome / descrição do item *<input name="descricao" value="<%= val('descricao') %>" required maxlength="200" placeholder="Ex.: Notebook Dell Latitude 5440"></label>
+      <label>Categoria *<select name="categoria_id" required>
+        <option value="">Selecione…</option>
+        <% categorias.filter(c => c.ativo || String(c.id) === String(item.categoria_id)).forEach(c => { %><option value="<%= c.id %>" <%= String(c.id) === String(item.categoria_id) ? 'selected' : '' %>><%= c.nome %></option><% }) %>
+      </select></label>
+      <label>Marca<input name="marca" value="<%= val('marca') %>" maxlength="100"></label>
+      <label>Modelo<input name="modelo" value="<%= val('modelo') %>" maxlength="100"></label>
+      <% if (novo) { %>
+      <label>Quantidade de unidades *<input type="number" name="quantidade" id="quantidade" min="1" max="200" value="<%= val('quantidade') || 1 %>" required>
+        <small>Cada unidade recebe ficha e código próprios.</small></label>
+      <label class="col-2" id="serieUnica">Número de série<input name="numero_serie" value="<%= val('numero_serie') %>" maxlength="100"></label>
+      <label class="col-2" id="serieLote" hidden>Números de série (opcional, um por linha, na ordem das unidades)<textarea name="numeros_serie" rows="4"><%= val('numeros_serie') %></textarea></label>
+      <% } else { %>
+      <label>Número de série<input name="numero_serie" value="<%= val('numero_serie') %>" maxlength="100"></label>
+      <% } %>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Localização</legend>
+    <div class="campos">
+      <% if (novo) { %>
+      <label>Setor *<select name="setor_id" required>
+        <option value="">Selecione…</option>
+        <% setores.forEach(s => { %><option value="<%= s.id %>" <%= String(s.id) === String(item.setor_id) ? 'selected' : '' %>><%= s.codigo %> — <%= s.nome %></option><% }) %>
+      </select><small>Define o código: FZA.<em>setor</em>.<em>sequencial</em></small></label>
+      <% } else { %>
+      <div class="campo-fixo"><span>Setor atual</span><strong><%= item.setor_codigo %> — <%= item.setor_nome %></strong><small>Para mudar de setor, use <a href="/equipamentos/<%= item.id %>/transferir">Transferir</a>.</small></div>
+      <% } %>
+      <label>Pessoa responsável<input name="responsavel" value="<%= val('responsavel') %>" list="lista-resp" maxlength="120"></label>
+      <datalist id="lista-resp"><% responsaveis.forEach(r => { %><option value="<%= r %>"><% }) %></datalist>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Aquisição</legend>
+    <div class="campos">
+      <label>Data de aquisição<input type="date" name="data_aquisicao" value="<%= val('data_aquisicao') %>" max="<%= u.hoje() %>"></label>
+      <label>Valor unitário (R$)<input name="valor_aquisicao" id="valor" inputmode="decimal" placeholder="0,00" value="<%= item.valor_desconhecido ? '' : val('valor_aquisicao') %>" <%= item.valor_desconhecido ? 'disabled' : '' %>></label>
+      <label class="check"><input type="checkbox" name="valor_desconhecido" id="valorDesconhecido" <%= item.valor_desconhecido ? 'checked' : '' %>> Valor desconhecido (item antigo / sem nota)</label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Condição</legend>
+    <div class="campos">
+      <label>Estado de conservação *<select name="estado" required><% Object.entries(u.ESTADOS).forEach(([k, v]) => { %><option value="<%= k %>" <%= item.estado === k ? 'selected' : '' %>><%= v %></option><% }) %></select></label>
+      <label>Situação patrimonial *<select name="situacao" required><% u.SITUACOES_ATIVAS.forEach(k => { %><option value="<%= k %>" <%= item.situacao === k ? 'selected' : '' %>><%= u.SITUACOES[k] %></option><% }) %></select>
+        <small>A baixa é registrada pela ação “Dar baixa”.</small></label>
+      <label class="col-2">Observações<textarea name="observacoes" rows="3" maxlength="2000"><%= val('observacoes') %></textarea></label>
+      <label class="col-2">Foto (opcional — JPG, PNG ou WEBP, até 5 MB)<input type="file" name="foto" accept="image/jpeg,image/png,image/webp" capture="environment"></label>
+      <% if (!novo && item.tem_foto) { %>
+      <div class="foto-atual col-2"><img src="/equipamentos/<%= item.id %>/foto" alt="Foto atual"><label class="check"><input type="checkbox" name="remover_foto"> Remover foto atual</label></div>
+      <% } %>
+    </div>
+  </fieldset>
+
+  <div class="acoes">
+    <a class="btn" href="<%= novo ? '/equipamentos' : `/equipamentos/${item.id}` %>">Cancelar</a>
+    <button class="btn primario"><%= novo ? 'Cadastrar e gerar código' : 'Salvar alterações' %></button>
+  </div>
+</form>
+<%- include('../partials/bottom') %>

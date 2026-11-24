@@ -1,0 +1,62 @@
+<%- include('../partials/top', { titulo: 'Usuários' }) %>
+<div class="cabecalho"><div><h1>Usuários</h1><p class="sub">Operadores consultam e movimentam o inventário. A gestão de usuários é exclusiva do administrador.</p></div></div>
+<%- include('../partials/erros', { erros }) %>
+<div class="grade-2 larga-esq">
+  <section class="cartao sem-pad">
+    <div class="tabela-wrap"><table class="tabela">
+      <thead><tr><th>Usuário</th><th>Perfil</th><th>Status</th><th class="m-ocultar">Último acesso</th><th>Ações</th></tr></thead>
+      <tbody>
+      <% usuarios.forEach(x => { const eu = x.id === user.id; %>
+        <tr class="<%= x.ativo ? '' : 'baixado' %>">
+          <td><strong><%= x.nome %></strong><small class="linha2 mono"><%= x.login %><%= eu ? ' (você)' : '' %></small><% if (x.whatsapp) { %><small class="linha2">WhatsApp +<%= x.whatsapp %></small><% } %></td>
+          <td><%= x.perfil === 'admin' ? 'Administrador' : 'Operador' %></td>
+          <td><span class="etq <%= x.ativo ? 'sit-em_uso' : 'sit-baixado' %>"><%= x.ativo ? 'Ativo' : 'Desativado' %></span><% if (x.trocar_senha && x.ativo) { %><small class="linha2">troca de senha pendente</small><% } %></td>
+          <td class="m-ocultar"><%= x.ultimo_acesso ? u.dataHora(x.ultimo_acesso) : 'nunca' %></td>
+          <td>
+            <details class="menu-acoes">
+              <summary class="btn sm">Gerenciar</summary>
+              <div class="menu-corpo">
+                <form method="post" action="/usuarios/<%= x.id %>/senha">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <label>Nova senha provisória<input type="password" name="senha" required minlength="8" autocomplete="new-password"></label>
+                  <button class="btn sm">Redefinir senha</button>
+                </form>
+                <form method="post" action="/usuarios/<%= x.id %>/whatsapp">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <label>WhatsApp (cadastro por mensagem)<input name="whatsapp" value="<%= x.whatsapp ? '+' + x.whatsapp : '' %>" placeholder="(11) 98765-4321" inputmode="tel"></label>
+                  <button class="btn sm">Salvar WhatsApp</button>
+                </form>
+                <% if (!eu) { %>
+                <form method="post" action="/usuarios/<%= x.id %>/perfil">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <input type="hidden" name="perfil" value="<%= x.perfil === 'admin' ? 'operador' : 'admin' %>">
+                  <button class="btn sm">Tornar <%= x.perfil === 'admin' ? 'operador' : 'administrador' %></button>
+                </form>
+                <form method="post" action="/usuarios/<%= x.id %>/ativo" data-confirmar="<%= x.ativo ? `Desativar o usuário ${x.login}? Ele perderá o acesso imediatamente.` : '' %>">
+                  <input type="hidden" name="_csrf" value="<%= csrf %>">
+                  <input type="hidden" name="ativo" value="<%= x.ativo ? 'false' : 'true' %>">
+                  <button class="btn sm <%= x.ativo ? 'perigo' : '' %>"><%= x.ativo ? 'Desativar' : 'Reativar' %></button>
+                </form>
+                <% } %>
+              </div>
+            </details>
+          </td>
+        </tr>
+      <% }) %>
+      </tbody>
+    </table></div>
+  </section>
+  <section class="cartao">
+    <h2>Novo usuário</h2>
+    <form class="formulario" method="post" action="/usuarios" autocomplete="off">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>Nome *<input name="nome" value="<%= form.nome || '' %>" required maxlength="120"></label>
+      <label>Login *<input name="login" value="<%= form.login || '' %>" required pattern="[A-Za-z0-9._\-]{3,40}" autocapitalize="none"></label>
+      <label>Perfil<select name="perfil"><option value="operador">Operador</option><option value="admin" <%= form.perfil === 'admin' ? 'selected' : '' %>>Administrador</option></select></label>
+      <label>WhatsApp (opcional)<input name="whatsapp" value="<%= form.whatsapp || '' %>" placeholder="(11) 98765-4321" inputmode="tel"><small>Permite cadastrar equipamentos enviando mensagem para o número da empresa.</small></label>
+      <label>Senha provisória *<input type="password" name="senha" required minlength="8" autocomplete="new-password"><small>O usuário deverá trocá-la no primeiro acesso.</small></label>
+      <div class="acoes"><button class="btn primario">Criar usuário</button></div>
+    </form>
+  </section>
+</div>
+<%- include('../partials/bottom') %>

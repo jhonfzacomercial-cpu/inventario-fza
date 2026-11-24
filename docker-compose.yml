@@ -1,0 +1,35 @@
+# Sobe o sistema completo (app + PostgreSQL) com: docker compose up -d
+# Defina ADMIN_INITIAL_PASSWORD e SESSION_SECRET num arquivo .env ao lado deste arquivo.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: inventario
+      POSTGRES_USER: fza
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-fza_troque_esta_senha}
+    volumes:
+      - dados_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fza -d inventario"]
+      interval: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://fza:${DB_PASSWORD:-fza_troque_esta_senha}@db:5432/inventario
+      SESSION_SECRET: ${SESSION_SECRET:?defina SESSION_SECRET no .env}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
+      APP_URL: ${APP_URL:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      NODE_ENV: production
+
+volumes:
+  dados_pg:
