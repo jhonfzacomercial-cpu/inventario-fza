@@ -32,6 +32,37 @@
     qtd.addEventListener('input', syncQ); syncQ();
   }
 
+  // Reduz a foto no navegador antes de enviar (lado maior até 1600 px, JPEG):
+  // economiza espaço no banco gratuito e acelera o envio pelo celular.
+  document.querySelectorAll('input[type=file][name=foto]').forEach(function (input) {
+    input.addEventListener('change', function () {
+      var f = input.files && input.files[0];
+      if (!f || !/^image\//.test(f.type) || !window.DataTransfer || !window.createImageBitmap) return;
+      var form = input.form, botoes = form ? form.querySelectorAll('button') : [];
+      Array.prototype.forEach.call(botoes, function (b) { b.disabled = true; });
+      var liberar = function () { Array.prototype.forEach.call(botoes, function (b) { b.disabled = false; }); };
+      createImageBitmap(f).then(function (img) {
+        var MAX = 1600, k = Math.min(1, MAX / Math.max(img.width, img.height));
+        if (k === 1 && f.size < 600 * 1024) { liberar(); return; }
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        var ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function (blob) {
+          try {
+            if (blob && blob.size < f.size) {
+              var dt = new DataTransfer();
+              dt.items.add(new File([blob], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+              input.files = dt.files;
+            }
+          } catch (e) { /* mantém o arquivo original */ }
+          liberar();
+        }, 'image/jpeg', 0.82);
+      }).catch(liberar);
+    });
+  });
+
   // Confirmação da baixa patrimonial
   var fb = document.getElementById('formBaixa');
   if (fb) fb.addEventListener('submit', function (e) {

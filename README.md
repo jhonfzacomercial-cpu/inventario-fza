@@ -21,22 +21,53 @@ Sistema web para cadastrar, localizar, transferir e dar baixa em equipamentos, c
 
 ---
 
-## Publicar na internet (acesso para qualquer pessoa com login e senha)
+## Publicar na internet — 100% gratuito
 
-O GitHub guarda apenas o **código**. Para a equipe acessar pelo navegador, o sistema precisa rodar em um servidor com banco PostgreSQL. A forma mais simples é o **Render**, que lê o arquivo `render.yaml` deste repositório e cria tudo sozinho.
+O GitHub guarda apenas o **código**. Para a equipe acessar pelo navegador, o sistema roda em dois serviços gratuitos:
 
-1. Crie uma conta em https://render.com e conecte sua conta do GitHub.
-2. Clique em **New → Blueprint** e escolha este repositório.
-3. O Render vai pedir os valores das variáveis marcadas como “sync: false”:
+- **Neon** (https://neon.tech): banco PostgreSQL gratuito e sem prazo de expiração (0,5 GB).
+- **Render** (https://render.com): servidor web gratuito que lê o `render.yaml` deste repositório.
+
+No momento desta versão, nenhum dos dois exige cartão de crédito no plano gratuito.
+
+### 1. Banco de dados no Neon
+
+1. Crie uma conta em https://neon.tech (dá para entrar com a conta do GitHub).
+2. Crie um projeto (ex.: `inventario-fza`) na região **AWS US East (N. Virginia)**, a mesma do Render gratuito.
+3. Na tela **Connect**, **desligue a opção “Connection pooling”** e copie a *connection string*. Ela começa com `postgresql://` e termina com `?sslmode=require`.
+
+   A conexão precisa ser direta (sem pooling) porque o sistema usa travas do banco para gerar os códigos patrimoniais sem repetição.
+
+### 2. Servidor no Render
+
+1. Crie uma conta em https://render.com com **“Sign in with GitHub”**.
+2. Clique em **New → Blueprint** e escolha o repositório `inventario-fza`. Se ele não aparecer, autorize o Render a ver o repositório.
+3. Preencha as variáveis pedidas:
+   - `DATABASE_URL`: a connection string copiada do Neon.
    - `ADMIN_INITIAL_PASSWORD`: a senha inicial do usuário **Adm** (mínimo 8 caracteres, com letras e números).
-   - `APP_URL`: pode ficar em branco no primeiro deploy. Depois, preencha com o endereço que o Render gerar (ex.: `https://inventario-fza.onrender.com`).
-   - Variáveis `WHATSAPP_*`: deixe em branco por enquanto (veja a seção do WhatsApp).
-4. Clique em **Apply**. Em poucos minutos o sistema estará no ar no endereço `https://<nome>.onrender.com`.
-5. Entre com **Adm** e a senha inicial, defina a nova senha e crie os usuários da equipe em **Usuários**.
+   - `APP_URL` e `WHATSAPP_*`: deixe em branco por enquanto.
+4. Clique em **Apply**. Em poucos minutos o sistema estará em `https://inventario-fza.onrender.com` (ou nome parecido).
+5. Entre com **Adm** e a senha inicial, defina a nova senha e crie os setores e os usuários da equipe.
+6. Volte em **Environment** no Render, preencha `APP_URL` com o endereço gerado e salve.
 
-O `render.yaml` usa planos pagos de entrada (serviço web e banco), porque o banco gratuito do Render é temporário e apagaria os dados. Confira os valores atuais em https://render.com/pricing. Para usar um domínio próprio (ex.: `inventario.grupofza.com.br`), acesse *Settings → Custom Domains* no Render e atualize `APP_URL`.
+### Limites do plano gratuito
 
-**Outras opções:** Railway, Fly.io ou uma VPS. Use o `Dockerfile` (ou `npm ci --omit=dev && npm start`) com estas variáveis:
+| Limite | O que significa na prática |
+|---|---|
+| O servidor “dorme” após 15 min sem acesso | O primeiro acesso depois de um tempo parado demora **cerca de 1 minuto** para abrir. Depois disso fica rápido. |
+| Banco com 0,5 GB | O suficiente para milhares de equipamentos. As fotos são reduzidas automaticamente no navegador (cerca de 200 KB cada) antes do envio. |
+| O banco também hiberna quando ninguém usa | Os dados ficam guardados; ele acorda sozinho em poucos segundos. |
+| WhatsApp com o servidor dormindo | A primeira mensagem pode demorar 1 a 2 minutos para ser respondida. A Meta reenvia a mensagem automaticamente e o sistema ignora as repetidas. |
+
+**Backup:** exporte periodicamente os relatórios em XLSX ou faça um `pg_dump` da connection string do Neon:
+
+```bash
+pg_dump "postgresql://...neon.tech/neondb?sslmode=require" > backup.sql
+```
+
+Se um dia quiser eliminar a espera do primeiro acesso, basta mudar o plano do serviço no Render. Nada no código precisa mudar.
+
+**Outras opções de hospedagem:** Railway, Fly.io ou uma VPS. Use o `Dockerfile` (ou `npm ci --omit=dev && npm start`) com estas variáveis:
 
 | Variável | Descrição |
 |---|---|
@@ -47,12 +78,6 @@ O `render.yaml` usa planos pagos de entrada (serviço web e banco), porque o ban
 | `APP_URL` | Endereço público, usado nos links enviados pelo WhatsApp |
 | `NODE_ENV` | `production` (o cookie passa a exigir HTTPS) |
 | `COOKIE_SECURE` | `false` apenas se o acesso for por HTTP na rede interna |
-
-**Backup:** basta fazer o `pg_dump` do banco (as fotos estão incluídas):
-
-```bash
-pg_dump "$DATABASE_URL" > backup.sql
-```
 
 ---
 
@@ -105,7 +130,7 @@ A integração usa a **API oficial do WhatsApp (WhatsApp Cloud API, da Meta)**. 
    Clique em *Verificar e salvar* e depois **assine o campo `messages`**.
 9. Publique o app (modo *Ao vivo*).
 
-**Custos:** as respostas do sistema são “conversas de serviço” iniciadas pelo usuário, que pela política atual da Meta não são cobradas. A Meta pode alterar essa política; confira em https://developers.facebook.com/docs/whatsapp/pricing.
+**Custos:** o app da Meta é gratuito. As respostas do sistema são “conversas de serviço” iniciadas pelo usuário, que pela política atual da Meta não são cobradas. O único gasto é um chip para o número da empresa, caso não tenha um disponível. A Meta pode alterar essa política; confira em https://developers.facebook.com/docs/whatsapp/pricing.
 
 **Segurança:** o endereço `/webhooks/whatsapp` é o único sem login, porque é chamado pela Meta. Toda requisição precisa da assinatura `X-Hub-Signature-256` gerada com a chave secreta do app; sem ela é rejeitada. Mensagens repetidas são ignoradas e números não vinculados recebem apenas uma recusa.
 

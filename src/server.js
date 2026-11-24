@@ -38,8 +38,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Verificação de saúde sem consultar o banco: as checagens automáticas da hospedagem
+// não mantêm o banco gratuito (Neon) acordado. Use /healthz?db=1 para testar o banco.
 app.get('/healthz', async (req, res) => {
-  try { await query('SELECT 1'); res.json({ ok: true }); } catch { res.status(500).json({ ok: false }); }
+  if (!req.query.db) return res.json({ ok: true });
+  try { await query('SELECT 1'); res.json({ ok: true, banco: true }); } catch { res.status(500).json({ ok: false }); }
 });
 
 // Webhook do WhatsApp: público, autenticado pela assinatura da Meta (precisa do corpo bruto)
@@ -51,7 +54,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.json({ limit: '1mb' }));
 
 app.use(session({
-  store: new PgSession({ pool, tableName: 'sessao' }),
+  store: new PgSession({ pool, tableName: 'sessao', pruneSessionInterval: 60 * 60 }),
   name: 'fza.sid',
   secret,
   resave: false,
